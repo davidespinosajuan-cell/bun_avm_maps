@@ -1,11 +1,12 @@
 import type { Usor } from "../types";
 
 interface UsoresState {
-  perId: Map<string,Usor>
+  perId: Map<string, Usor>
 }
 
 export class UsoresStore {
-  private state: UsoresState= {
+
+  private state: UsoresState = {
     perId: new Map(),
   };
 
@@ -24,11 +25,12 @@ export class UsoresStore {
     return true;
   }
 
-  delere(socketId: string) {
+  delere(socketId: string): boolean {
     return this.state.perId.delete(socketId);
+    return true;
   }
 
-   obtinere(socketId: string) {
+   obtinere(socketId: string): Usor   | undefined {
     return this.state.perId.get(socketId);
   }
 obtinereOmnes(): Usor[] {

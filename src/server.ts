@@ -1,7 +1,18 @@
 import { Server, Socket } from "socket.io"
 import { Server as Engine} from "@socket.io/bun-engine"
 import { SERVER_CONFIG } from "./config/server-config";
+import type { LatLng, Usor, UsorPayload } from "./types";
+import { usorService } from "./services/usor.service";
 
+const userAdPayload = (cliens: Usor) => {
+  return {
+    id: cliens.id,
+    nomen: cliens.nomen,
+    color: cliens.color,
+    lng: cliens.lng,
+    lat: cliens.lat
+  }
+}
 
 export const creareServer = () => {
 
@@ -16,6 +27,41 @@ export const creareServer = () => {
 
     io.on("connection", (socket) => {
      console.log(`Cliente conectado: ${socket.id}`);
+
+     setTimeout(() => {
+      const usores = usorService.obtinereOmnes().map(userAdPayload);
+      socket.emit("GET_CLIENTS", usores);
+      }, 100);
+
+     socket.on("CLIENT_REGISTER", (payload:UsorPayload) =>{
+      const usor = usorService.addere(socket.id, payload);
+      const usores = usorService.obtinereOmnes().map(userAdPayload);
+
+      io.emit("GET_CLIENTS", usores);
+      socket.broadcast.emit("CLIENT_JOINED", userAdPayload(usor));
+     });
+     
+     socket.on("CLIENT_MOVE", (payload: LatLng) => {
+      const ok = usorService.actualizarePositionem(
+        socket.id,
+        payload.lng,
+        payload.lat
+
+      );
+      if (ok) {
+        socket.broadcast.emit("CLIENT_MOVED", {
+          id: socket.id,
+          lng:payload.lng,
+          lat:payload.lat
+        }as const);
+      }
+     });
+
+     socket.on("disconnect", () => {
+      usorService.delere(socket.id);
+      socket.broadcast.emit("CLIENT_LEFT", { id: socket.id } as const);
+     });
+
      
     });
 
